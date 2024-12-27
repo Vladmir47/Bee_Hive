@@ -21,11 +21,11 @@
 #define ENA_PIN 18  // Enable pin for speed control (optional)
 
 // Thresholds
-const int co2Threshold = 1000000;  // CO2 level threshold in ppm
-const int ldrThreshold = 100000;   // LDR threshold for night detection (adjust as needed)
+const int co2Threshold = 500;  // CO2 level threshold in ppm
+const int ldrThreshold = 4000;   // LDR threshold for night detection (adjust as needed)
 
 // Define the APN and credentials
-const char apn[] = "halotel internet"; // APN for Halotel Tanzania
+const char apn[] = "internet"; // APN for Halotel Tanzania
 const char gprsUser[] = "";            // GPRS User (leave empty if not needed)
 const char gprsPass[] = "";            // GPRS Password (leave empty if not needed)
 
@@ -36,6 +36,7 @@ const char simPIN[] = "";
 const char server[] = "api.thingspeak.com";
 const int port = 80;
 String apiKeyValue = "F2UFOOKOC44JGHDC";
+String apiKeyValue2 = "HMUHUSQ80ZXLNSNL";
 
 // TTGO T-Call pins
 #define MODEM_RST 5
@@ -174,10 +175,10 @@ void loop() {
       SerialMon.println(ldrValue);
 
       // Control linear actuator based on CO2 and light levels
-      if (co2 < co2Threshold && ldrValue < ldrThreshold) {
+      if (co2 > co2Threshold || ldrValue > ldrThreshold) {
         Serial.println("Moving forward...");
         moveForward(204);  // Move forward at 80% speed
-        delay(20000);
+        delay(40000);
 
         Serial.println("Stopping...");
         stopActuator();
@@ -185,7 +186,7 @@ void loop() {
 
         Serial.println("Moving backward...");
         moveBackward(153);  // Move backward at 60% speed
-        delay(20000);
+        delay(40000);
 
         Serial.println("Stopping...");
         stopActuator();
@@ -196,14 +197,34 @@ void loop() {
       }
 
       // Prepare HTTP POST request data
-      String httpRequestData = "api_key=" + apiKeyValue
+      String httpRequestData1 = "api_key=" + apiKeyValue
                                + "&field1=" + String(temperature)
                                + "&field2=" + String(humidity)
                                + "&field3=" + String(ldrValue)
                                + "&field4=" + String(co2)
                                + "&field5=" + String(tvoc);
+      
+      // Prepare HTTP POST request data for the second channel
+      String httpRequestData2 = "api_key=" + apiKeyValue2
+                                + "&field1=" + String(temperature)
+                                + "&field2=" + String(humidity)
+                                + "&field3=" + String(ldrValue)
+                                + "&field4=" + String(co2)
+                                + "&field5=" + String(tvoc);
+      
+      // Function to send data to ThingSpeak
+      sendToThingSpeak(httpRequestData1);
+      sendToThingSpeak(httpRequestData2);
 
-      // Send HTTP POST request to ThingSpeak
+     
+    } else {
+      SerialMon.println("Failed to read from ENS160 sensor.");
+    }
+  }
+}
+
+ // Send HTTP POST request to ThingSpeak
+ void sendToThingSpeak(String httpRequestData){
       if (client.connect(server, port)) {
         SerialMon.println("Connected to ThingSpeak, sending data...");
         client.print(String("POST /update HTTP/1.1\r\n"));
@@ -230,8 +251,4 @@ void loop() {
       } else {
         SerialMon.println("Failed to connect to ThingSpeak.");
       }
-    } else {
-      SerialMon.println("Failed to read from ENS160 sensor.");
-    }
-  }
-}
+      }
