@@ -35,8 +35,8 @@ const char simPIN[] = "";
 // ThingSpeak server details
 const char server[] = "api.thingspeak.com";
 const int port = 80;
-String apiKeyValue = "F2UFOOKOC44JGHDC";
-String apiKeyValue2 = "HMUHUSQ80ZXLNSNL";
+String apiKeyValue = "API_KEY1";
+String apiKeyValue2 = "API_KEY2";
 
 // TTGO T-Call pins
 #define MODEM_RST 5
